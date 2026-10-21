@@ -1,0 +1,14 @@
+services:
+  - type: web
+    name: super-veloren
+    runtime: node
+    buildCommand: npm install
+    startCommand: node src/server.js
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_VERSION
+        value: 22
+      - key: SUPER_VEL_MASTER_TOKEN
+        sync: false
+      - key: OPENAI_API_KEY
+        sync: false
