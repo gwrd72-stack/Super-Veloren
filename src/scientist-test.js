@@ -1,0 +1,17 @@
+import assert from 'node:assert/strict';
+import {investigate,planInvestigation} from './scientist.js';
+const signal=Array.from({length:256},(_,i)=>Math.sin(2*Math.PI*16*i/256));
+assert.throws(()=>planInvestigation({question:'measure the signal',task:'signal',values:[1],sample_rate_hz:256}));
+assert.throws(()=>planInvestigation({question:'measure the signal',task:'shell'}));
+const s=await investigate({question:'What frequency dominates this signal?',task:'signal',values:signal,sample_rate_hz:256});
+assert(s.ok&&s.execution.results.every(x=>x.ok));assert(s.checks.length===1&&s.checks[0].pass);
+assert(Math.abs(s.execution.results[0].result.result.dominant_frequency_hz-16)<1);
+assert(s.plan.plan_sha256.length===64);
+const c=await investigate({question:'Do the experimental groups differ?',task:'comparison',values:Array.from({length:20},(_,i)=>i),other:Array.from({length:20},(_,i)=>i+2)});
+assert(c.ok&&c.checks[0].pass);
+const m=await investigate({question:'What is the spread of measured values?',task:'measurement',values:Array.from({length:20},(_,i)=>i)});
+assert(m.ok&&m.execution.results[0].ok);
+const f=await investigate({question:'Evaluate mechanical oscillator response',task:'mechanics',parameters:{operation:'oscillator',mass_kg:1,spring_n_per_m:100,duration_s:1}});
+assert(f.ok&&f.execution.results[0].ok);
+const bad=await investigate({question:'Attempt invalid electrical model',task:'electrical',parameters:{operation:'shell'}});assert.equal(bad.ok,false);
+console.log('V14 scientific planning / cross-validation: 10 assertions passed');

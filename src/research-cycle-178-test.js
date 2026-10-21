@@ -1,0 +1,14 @@
+import assert from 'node:assert/strict';
+import {researchCycle178,scoreReproducibility178} from './research-cycle-178.js';
+let checks=0;const check=(x)=>{assert.ok(x);checks++;};
+check(!researchCycle178({objective:'short',tasks:[]}).ok);
+check(!researchCycle178({objective:'test a possible anomaly with instruments',tasks:[{method:'javascript',data:{code:'1+1'}}]}).ok);
+check(!researchCycle178({objective:'test the measured physical hypothesis',tasks:Array(9).fill({method:'signal',data:{}})}).ok);
+let x=researchCycle178({objective:'Measure reproducibility of the physical experiment',tasks:[{method:'evidence',data:{}},{method:'signal',data:{}}]});
+check(x.ok);check(x.findings.length===2);check(x.summary.failed>=1);check(x.authority.includes('Master'));
+const y=scoreReproducibility178({runs:[1,2,3]});check(y.ok);check(y.mean===2);check(y.standardDeviation===1);check(y.n===3);
+check(!scoreReproducibility178({runs:[3,Infinity]}).ok);
+check(!scoreReproducibility178({runs:[1]}).ok);
+check(scoreReproducibility178({runs:[0,0]}).relativeSpread===null);
+check(researchCycle178({objective:'Try consistent observations and instrument analysis',tasks:[{method:'evidence',data:{}}]}).fingerprint===researchCycle178({objective:'Try consistent observations and instrument analysis',tasks:[{method:'evidence',data:{}}]}).fingerprint);
+console.log(`V17.8: ${checks} checks passed`);

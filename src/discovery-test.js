@@ -1,0 +1,13 @@
+import assert from 'node:assert/strict';
+import {discovery} from './discovery.js';
+const test=async(req,check)=>{let r=await discovery(req);assert.equal(r.ok,true,JSON.stringify(r));check(r.result);};
+await test({operation:'welch',group_a:[2,3,4,5],group_b:[0,1,2,3]},r=>{assert.equal(r.effect,2);assert.ok(r.standard_error>0);});
+await test({operation:'permutation',group_a:[10,11,12,13],group_b:[1,2,3,4],iterations:1000,seed:7},r=>assert.ok(r.permutation_p_value<.1));
+const p={operation:'permutation',group_a:[3,4,5],group_b:[1,2,3],iterations:200,seed:12};
+assert.deepEqual(await discovery(p),await discovery(p));
+await test({operation:'sample_size',effect:1,sd:2},r=>assert.ok(r.participants_per_group_approx>=50));
+await test({operation:'next_experiment',options:[{title:'A',information_gain:1,feasibility:1,independence:1,cost:0,risk:0},{title:'B',information_gain:0,feasibility:0,independence:0,cost:1,risk:1}]},r=>assert.equal(r.ranked[0].title,'A'));
+let bad=await discovery({operation:'welch',group_a:[1,2],group_b:[3,Infinity]});assert.equal(bad.ok,false);
+bad=await discovery({operation:'next_experiment',options:[{title:'bad',information_gain:2,feasibility:1,independence:1,cost:0,risk:0}]});assert.equal(bad.ok,false);
+bad=await discovery({operation:'shell'});assert.equal(bad.ok,false);
+console.log('V12 discovery: 8 assertions passed');

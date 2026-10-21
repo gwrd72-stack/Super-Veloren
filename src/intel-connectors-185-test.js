@@ -1,0 +1,12 @@
+import assert from 'node:assert/strict';
+import {normalizeKev,fetchKev,matchAdvisories} from './intel-connectors-185.js';
+const fixture={vulnerabilities:[{cveID:'CVE-2026-12345',vulnerabilityName:'Example Vendor Gateway',shortDescription:'Remote code execution in a gateway',dateAdded:'2026-10-12'},{cveID:'bad',vulnerabilityName:'Bad',shortDescription:'Invalid CVE'}]};
+let checks=0;
+const ok=(a,b)=>{assert.deepEqual(a,b);checks++};
+const n=normalizeKev(fixture);ok(n.ok,true);ok(n.count,1);ok(n.incidents[0].externalId,'CVE-2026-12345');ok(n.incidents[0].exploitedInWild,true);
+ok(matchAdvisories(n.incidents,['gateway']).matched,1);ok(matchAdvisories(n.incidents,['oranges']).matched,0);ok(matchAdvisories(n.incidents,[]).ok,false);
+const fake=async (url,opts)=>{ok(new URL(url).hostname,'www.cisa.gov');ok(opts.redirect,'error');return {ok:true,headers:{get:()=>null},text:async()=>JSON.stringify(fixture)}};
+ok((await fetchKev({fetcher:fake})).count,1);
+const bad=async()=>({ok:false,status:503});ok((await fetchKev({fetcher:bad})).ok,false);
+ok(normalizeKev({}).ok,false);
+console.log(`V18.5 intelligence connector: ${checks} assertions passed`);

@@ -1,0 +1,8 @@
+import assert from 'node:assert/strict';import {planTarget,rankEvidence} from './target-retrieval.js';
+let count=0;const check=(b,msg)=>{assert.ok(b,msg);count++;};
+const plan=planTarget({objective:'Find experimental transformer insulation failures',project:'electrical reliability',keywords:['dielectric test']});
+check(plan.ok,'plan valid');check(plan.keywords.includes('dielectric'),'expanded terms');check(plan.sources.includes('approved-public-feeds'),'authorized sources');check(plan.reviewRequired,'review required');check(!planTarget({objective:'hi'}).ok,'reject vague objectives');
+const docs=[{id:'a',title:'Transformer insulation failure study',summary:'Dielectric test found breakdown',origin:'public-feed',reference:'https://example.org/a',collectedAt:new Date().toISOString()},{id:'b',title:'Transformer insulation failure study',summary:'Dielectric test found breakdown',origin:'public-feed',reference:'https://example.org/a'},{id:'c',title:'Unrelated cooking article',summary:'new soup',origin:'public-feed'}];
+const r=rankEvidence(plan,docs);check(r.ok,'ranking');check(r.total===1,'dedup and relevancy');check(r.results[0].matchedKeywords.includes('transformer'),'match explanation');check(r.results[0].reference==='https://example.org/a','reference retained');check(r.nextSteps.length>=0,'gap list');check(r.results[0].caveat.includes('not a verified'),'uncertainty');check(!rankEvidence({},docs).ok,'invalid plan');check(plan.queries.length>=2,'search expressions');
+const excluded=planTarget({objective:'Find transformer insulation failures',exclude:['dielectric']});check(rankEvidence(excluded,docs).total===0,'exclusion');
+console.log('PASS',count,'targeted retrieval assertions');

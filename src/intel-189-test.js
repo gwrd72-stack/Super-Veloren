@@ -1,0 +1,11 @@
+import assert from 'node:assert/strict';
+import {rankFindings189,runIntelMission189} from './intel-189.js';
+let checks=0;const test=(v)=>{assert.ok(v);checks++};
+const reports=[{title:'Grid transformer exposure',summary:'Transformer relay advisory',reference:'https://example.org/a',providerId:'P1',category:'vulnerability'},{title:'New turbine paper',summary:'Turbine technology',reference:'https://research.example.org/p',providerId:'P2',category:'research'}];
+const r=rankFindings189({objective:'grid transformer',reports});test(r.ok);test(r.findings.length===2);test(r.findings[0].title==='Grid transformer exposure');test(r.findings[0].score===1);test(r.unmatchedTerms.length===0);test(!rankFindings189({objective:'x',reports}).ok);test(rankFindings189({objective:'grid transformer',reports:[{...reports[0],reference:'http://bad.org'}]}).findings.length===0);test(rankFindings189({objective:'grid transformer',reports:[reports[0],reports[0]]}).findings.length===1);test(rankFindings189({objective:'grid transformer',reports:[{...reports[0],summary:'Contact abc@example.com'}]}).findings[0].summary.includes('[EMAIL REDACTED]'));
+const fetcher=async()=>({ok:true,providerId:'configured-provider',accepted:reports,rejected:[]});
+const m=await runIntelMission189({objective:'grid transformer'}, {retrieve:fetcher});test(m.ok);test(m.findings.length===2);test(m.corroboration.independentProviders===2);test(m.assessment.includes('unverified'));test(!m.archiveId);
+const a=await runIntelMission189({objective:'grid transformer',archive:true},{retrieve:fetcher,save:async(x)=>({ok:Array.isArray(x.evidence),id:'case-1'})});test(a.archiveId==='case-1');
+const missing=await runIntelMission189({objective:'grid transformer'},{retrieve:async()=>({ok:false})});test(!missing.ok);test(missing.providerConfigured===false);
+const failed=await runIntelMission189({objective:'grid transformer',archive:true},{retrieve:fetcher,save:async()=>({ok:false,error:'missing key'})});test(!failed.ok);test(failed.archiveError==='missing key');
+console.log(`V18.9 intelligence mission checks: ${checks} passed`);

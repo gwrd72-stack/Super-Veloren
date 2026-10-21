@@ -1,0 +1,13 @@
+import assert from 'node:assert/strict';
+import {assessSource,synthesize,createReconCase,addReconSource,getReconCase,closeReconCase} from './recon.js';
+assert.equal(assessSource({type:'public-article',title:'A',summary:'B',authorized:false}).ok,false);
+assert.equal(assessSource({type:'public-article',title:'A',summary:'B',authorized:true,url:'file:///secret'}).ok,false);
+assert.equal(assessSource({type:'public-article',title:'A',summary:'B',authorized:true,url:'https://example.org/a'}).ok,true);
+assert.equal((synthesize({id:'x',question:'q',sources:[]})).warnings.includes('No evidence recorded'),true);
+assert.equal((await createReconCase({question:'q',purpose:'unknown',scope:'public'})).ok,false);
+const c=await createReconCase({question:'Test public infrastructure claims',purpose:'infrastructure',scope:'Public regulatory records only'});assert.equal(c.ok,true);
+assert.equal((await addReconSource(c.case.id,{type:'public-record',title:'Report',summary:'A public claim',authorized:true,url:'https://example.org/report'})).ok,true);
+assert.equal((await getReconCase(c.case.id)).assessment.sources,1);
+assert.equal((await closeReconCase(c.case.id)).ok,true);
+assert.equal((await addReconSource(c.case.id,{type:'public-record',title:'Test',summary:'Should fail',authorized:true})).ok,false);
+console.log('V16.2 recon checks passed: 9');

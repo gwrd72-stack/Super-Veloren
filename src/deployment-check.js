@@ -1,0 +1,15 @@
+import assert from 'node:assert/strict';
+import {analyze} from './research.js';
+import {executeMath} from './math.js';
+import {physics} from './physics.js';
+import {scienceHealth} from './science-health.js';
+const stat=await analyze({operation:'describe',values:[10,20,30,40,50]});
+assert.equal(stat.ok,true);assert.equal(stat.result.mean,30);assert.equal(stat.result.median,30);
+console.log('PASS: Node statistics');
+const health=await scienceHealth();
+if(!health.ok)throw Error('Python dependencies unavailable: '+health.error);
+console.log('PASS: Python scientific dependencies',health.packages);
+const math=await executeMath({operation:'solve',expression:'x^2-5*x+6=0',variable:'x'});
+assert.equal(math.ok,true,JSON.stringify(math));console.log('PASS: symbolic algebra',JSON.stringify(math.result).slice(0,180));
+const p=await physics({operation:'oscillator',mass_kg:1,spring_n_per_m:4,damping_n_s_per_m:0.1,initial_displacement_m:1,duration_s:5,points:101});
+assert.equal(p.ok,true,JSON.stringify(p));console.log('PASS: physics oscillator');

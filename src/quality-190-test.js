@@ -1,0 +1,8 @@
+import assert from 'node:assert/strict';
+import {assessFrontier190,auditRetrieval190,autonomyGate190,securityAudit190} from './quality-190.js';
+let n=0;const ok=(v)=>{assert.ok(v);n++};
+const good=assessFrontier190({evidence:[{id:'x',reference:'calibrated bench record'}],claims:[{type:'hypothesis',statement:'resonance',evidenceIds:['x'],disconfirmingTest:'vary the field'}]});ok(good.ok);ok(good.readyForIndependentReview);ok(!assessFrontier190({claims:[{type:'hypothesis',statement:'x',evidenceIds:['missing']}]}).readyForIndependentReview);ok(!assessFrontier190({evidence:[{id:'z',reference:'a'},{id:'z',reference:'b'}]}).ok);
+const r=auditRetrieval190({objective:'investigate',findings:[{title:'A',reference:'https://example.org/a',providerId:'one'},{title:'A',reference:'https://example.org/a',providerId:'one'},{title:'B',reference:'https://other.org/b',providerId:'two'},{title:'C',reference:'http://insecure.test',providerId:'three'}]});ok(r.accepted.length===2);ok(r.corroborated);ok(r.rejectedCount===1);
+const proposal={steps:[{tool:'math',params:{a:1}}]};const p=autonomyGate190({proposal,executionScope:['math']});ok(p.ok&&!p.executeAllowed);ok(autonomyGate190({proposal,executionScope:['math'],approvedDigest:p.proposalDigest}).executeAllowed);ok(!autonomyGate190({proposal:{steps:[{tool:'runShell'}]},executionScope:['runShell']}).ok);ok(!autonomyGate190({proposal,executionScope:['physics']}).ok);
+ok(securityAudit190({providerUrl:'https://example.org/api'}).pass);ok(!securityAudit190({providerUrl:'http://example.org'}).pass);ok(!securityAudit190({providerUrl:'https://localhost/private'}).pass);ok(!securityAudit190({providerUrl:'https://example.org',allowRedirects:true}).pass);
+console.log(`V19.0 quality gate ${n} checks passed`);

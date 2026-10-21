@@ -1,0 +1,10 @@
+import assert from 'node:assert/strict';
+import {formulateInvestigation,independentReview,investigate175} from './autonomous-175.js';
+let checks=0;const ok=(x)=>{assert.ok(x);checks++};
+const objective='Investigate anomalous signal frequency under controlled measurement';
+const p=formulateInvestigation({objective});ok(p.ok);ok(p.type==='signal');ok(p.experiments.length===4);ok(p.permissions.includes('no autonomous external'));
+ok(formulateInvestigation({objective:'short'}).ok===false);
+const empty=independentReview({objective});ok(empty.gaps.includes('No observations supplied'));ok(!empty.readyForReview);ok(!empty.scientificallyConfirmed);
+const a=independentReview({objective,evidence:[{kind:'control',source:'sensor A',observation:'baseline',calibrated:true},{kind:'measurement',source:'sensor B',observation:'repeat',independent:true}]});ok(a.readyForReview);ok(!a.scientificallyConfirmed);ok(a.fingerprint===independentReview({objective,evidence:[{kind:'control',source:'sensor A',observation:'baseline',calibrated:true},{kind:'measurement',source:'sensor B',observation:'repeat',independent:true}]}).fingerprint);
+const result=await investigate175({objective,useModel:false});ok(result.modelStatus==='not_requested');ok(result.review.ok);
+console.log(`V17.5 autonomous science: ${checks} assertions passed`);

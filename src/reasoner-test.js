@@ -1,0 +1,17 @@
+import assert from 'node:assert/strict';
+import {executePlan,critiqueEvidence,validatePlan} from './reasoner.js';
+const invalid=await executePlan({question:'Is there a measurable effect?',steps:[{engine:'shell',input:{cmd:'cat /etc/passwd'}}]});
+assert.equal(invalid.ok,false);
+const ev=critiqueEvidence({claim:'The measured effect exceeds baseline',evidence:[{type:'measurement',summary:'Sensor reading 20',source:'test fixture'}]});
+assert.equal(ev.ok,true);assert.equal(ev.verdict,'not independently verified');assert(ev.concerns.length>=2);
+assert.equal(critiqueEvidence({claim:'A real claim',evidence:[{type:'bogus',summary:'x',source:'x'}]}).ok,false);
+const res=await executePlan({question:'Is the oscillation measurable?',hypothesis:'Frequency varies with period',steps:[{engine:'research',reason:'Characterize signal',input:{operation:'describe',values:[1,2,3,4,5]}},{engine:'discovery',reason:'Estimate sample size',input:{operation:'sample_size',effect_size:0.8}}]});
+assert.equal(res.ok,true);assert.equal(res.results.length,2);assert.equal(res.results[0].ok,true);assert.equal(res.assessment.scientific_conclusion,'not established');assert.equal(res.reproducibility.input_sha256.length,64);
+const signal=Array.from({length:256},(_,i)=>Math.sin(2*Math.PI*16*i/256));
+const spectrum=await executePlan({question:'Which frequencies are present in the measured signal?',steps:[{engine:'research',input:{operation:'spectral_diagnostics',values:signal,sample_rate_hz:256}}]});
+assert.equal(spectrum.results[0].ok,true);
+assert(Math.abs(spectrum.results[0].result.result.dominant_frequency_hz-16)<=1);
+const math=await executePlan({question:'Can the proposed algebraic identity be calculated?',steps:[{engine:'math',input:{operation:'factor',expression:'x^2-1',variable:'x'}}]});
+assert.equal(math.results[0].ok,true);
+assert.equal(math.results[0].result.result.result,'(x - 1)*(x + 1)');
+console.log('V13 reasoning and signal analysis: 12 assertions passed');

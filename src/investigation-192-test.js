@@ -1,0 +1,13 @@
+import assert from 'node:assert/strict';
+import {assessMission192,planFollowup192,investigate192} from './investigation-192.js';
+const objective='spectrometer calibration frequency measurement';
+const docs=[{title:'spectrometer calibration',summary:'',reference:'https://one.example/report'},{title:'frequency measurement',summary:'',reference:'https://two.example/report'}];
+const a=assessMission192(objective,docs);assert.equal(a.ok,true);assert.equal(a.coverage,1);assert.equal(a.distinctHosts,2);assert.equal(a.verified,false);
+const duplicate=assessMission192(objective,[...docs,docs[0],{title:'hidden',reference:'http://abc.onion'}]);assert.equal(duplicate.duplicates,1);assert.equal(duplicate.invalid,1);
+const q=planFollowup192(objective,['frequency','measurement'],[objective]);assert.ok(q.includes('primary source'));assert.notEqual(q,objective);
+let calls=[];const search=async({objective:q})=>{calls.push(q);return {ok:true,results:q===objective?[docs[0]]:[docs[1]]}};
+const r=await investigate192({objective,providers:['wikipedia']},{search,rounds:3});assert.equal(r.ok,true);assert.equal(r.coverage,1);assert.equal(r.history.length,2);assert.notEqual(calls[0],calls[1]);assert.equal(r.evidenceStatus,'UNVERIFIED');assert.match(r.digest,/^[a-f0-9]{64}$/);
+assert.equal((await investigate192({objective:'bad'},{search})).ok,false);
+assert.equal((await investigate192({objective,providers:['onion']},{search})).ok,false);
+assert.equal((await investigate192({objective},{search,rounds:12})).ok,false);
+console.log('V19.2 investigation tests: 15 assertions passed');

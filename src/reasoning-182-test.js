@@ -1,0 +1,11 @@
+import assert from 'node:assert/strict';
+import {updateBeliefs182,chooseExperiment182,auditReasoning182} from './reasoning-182.js';
+let n=0;const check=(x,msg)=>{assert.ok(x,msg);n++};
+const h=[{id:'A',prior:0.5},{id:'B',prior:0.5}];
+const e=[{id:'e1',likelihoods:{A:0.9,B:0.1}}];
+let b=updateBeliefs182({hypotheses:h,evidence:e});check(b.ok,'belief update');check(Math.abs(b.posterior[0].posterior-.9)<1e-10,'bayes analytic');check(b.mostSupported==='A','ranking');check(!updateBeliefs182({hypotheses:h,evidence:[e[0],e[0]]}).ok,'no duplicate evidence');check(!updateBeliefs182({hypotheses:h,evidence:[{id:'bad',likelihoods:{A:1.1,B:0.1}}]}).ok,'bad likelihood');
+const experiments=[{id:'informative',cost:1,outcomes:{yes:{A:.9,B:.1},no:{A:.1,B:.9}}},{id:'uninformative',cost:1,outcomes:{yes:{A:.5,B:.5},no:{A:.5,B:.5}}}];
+const x=chooseExperiment182({hypotheses:h,experiments});check(x.ok,'experiment');check(x.preferred==='informative','information ranking');check(x.ranked[0].informationBits>.5,'information amount');check(x.ranked[1].informationBits===0,'no gain');check(!chooseExperiment182({hypotheses:h,experiments:[{id:'invalid',cost:1,outcomes:{yes:{A:.9,B:.2},no:{A:.9,B:.8}}}]}).ok,'unnormalized experiment');
+const claims=[{id:'a',statement:'measurement',status:'observation',supports:[],contradicts:[]},{id:'b',statement:'claimed proof',status:'verified',supports:[],contradicts:['a']}];
+const audit=auditReasoning182({claims});check(audit.ok,'audit');check(audit.flagged===1,'flags unsupported');check(!auditReasoning182({claims:[{...claims[0],supports:['bad']}]}).ok,'unknown links');
+console.log(`V18.2 reasoning: ${n} checks passed`);

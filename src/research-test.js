@@ -1,0 +1,14 @@
+import assert from 'node:assert/strict';
+import {analyze,createCase,newEvidence} from './research.js';
+const check=async(o)=>{const r=await analyze(o);assert.equal(r.ok,true,JSON.stringify(r));return r.result;};
+assert.equal((await check({operation:'describe',values:[1,2,3,4,5]})).mean,3);
+assert.equal((await check({operation:'compare',values:[1,2,3],other:[5,6,7]})).mean_difference_a_minus_b,-4);
+assert.equal((await check({operation:'fit',x:[0,1,2,3],values:[1,3,5,7]})).slope,2);
+const n=128,rate=128,values=Array.from({length:n},(_,i)=>Math.sin(2*Math.PI*12*i/rate));
+assert.equal((await check({operation:'spectrum',values,sample_rate_hz:rate})).peak_frequencies_hz[0],12);
+const mc=await check({operation:'montecarlo',values:[1,2,3,4],seed:42,trials:500});
+assert.equal(mc.trials,500);
+const err=await analyze({operation:'describe',values:['malicious',1,2]});assert.equal(err.ok,false);
+const c=createCase({title:'Field reading',hypothesis:'Device readings differ from baseline'});
+assert.equal(c.status,'unverified');assert.equal(newEvidence({kind:'measurement',description:'meter 5',source:'sensor'}).kind,'measurement');
+console.log('7 research tests passed');

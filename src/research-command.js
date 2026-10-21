@@ -1,0 +1,34 @@
+import fs from 'node:fs/promises';
+import path from 'node:path';
+import crypto from 'node:crypto';
+
+const root = () => path.join(process.cwd(), 'data', 'research-command');
+const hash = value => crypto.createHash('sha256').update(JSON.stringify(value)).digest('hex');
+const clean = (x,n=2000) => typeof x==='string' ? x.trim().slice(0,n) : '';
+const kind = new Set(['observation','measurement','publication','simulation','testimony','hypothesis']);
+const reviews = new Set(['supported','refuted','inconclusive']);
+let queue = Promise.resolve();
+const serialized = fn => {const t=queue.then(fn);queue=t.catch(()=>{});return t;};
+async function read(id){try{return JSON.parse(await fs.readFile(path.join(root(),`${id}.json`),'utf8'));}catch(e){if(e.code==='ENOENT')return null;throw e;}}
+function validId(id){return /^[a-f0-9-]{36}$/.test(id||'');}
+async function save(record){await fs.mkdir(root(),{recursive:true,mode:0o700});const final=path.join(root(),`${record.id}.json`);const temp=final+'.'+crypto.randomUUID()+'.tmp';await fs.writeFile(temp,JSON.stringify(record,null,2),{mode:0o600});await fs.rename(temp,final);}
+function stateDigest(record){const {events,...state}=record;return hash(state);}
+function append(record,type,detail){const previous=record.events.at(-1)?.hash||'GENESIS';const event={seq:record.events.length+1,at:new Date().toISOString(),type,detail,previous,stateDigest:stateDigest(record)};event.hash=hash(event);record.events.push(event);return event;}
+export function verifyChain(record){let previous='GENESIS';for(const [i,e] of (record.events||[]).entries()){const {hash:recorded,...unsigned}=e;if(e.seq!==i+1||e.previous!==previous||hash(unsigned)!==recorded)return false;previous=recorded;}if(record.events?.at(-1)?.stateDigest && record.events.at(-1).stateDigest!==stateDigest(record))return false;return true;}
+export function assessDossier(d){const evidence=d.evidence||[];const references=evidence.filter(e=>e.source&&e.source!=='unspecified');const verified=evidence.filter(e=>e.verified===true);const replicates=evidence.filter(e=>e.replicated===true);const limits=[];
+ if(evidence.length===0)limits.push('No submitted evidence');if(references.length<2)limits.push('Fewer than two cited evidence records');if(!verified.length)limits.push('No independently verified measurement');if(!replicates.length)limits.push('No replication recorded');if(!(d.hypotheses||[]).some(h=>h.prediction&&h.falsifier))limits.push('No falsifiable hypothesis');if(!(d.reviews||[]).length)limits.push('No independent review recorded');
+ const flags=[...new Set((d.reviews||[]).filter(r=>r.outcome==='refuted').map(r=>r.hypothesisId))];
+ return {evidenceCount:evidence.length,verifiedMeasurements:verified.filter(e=>e.type==='measurement').length,replications:replicates.length,unresolved:limits,refutedHypotheses:flags,readiness:limits.length===0?'requires-expert-interpretation':'insufficient-evidence',caution:'Checklist completion is not proof of scientific validity or defense-grade certification'};
+}
+export async function createDossier(body={}){const title=clean(body.title,180),objective=clean(body.objective,3000);if(title.length<4||objective.length<15)return {ok:false,error:'Title and a specific research objective required'};
+ return serialized(async()=>{const record={id:crypto.randomUUID(),title,objective,classification:'private-owner-research',createdAt:new Date().toISOString(),hypotheses:[],evidence:[],reviews:[],events:[]};append(record,'created',{title,objectiveHash:hash(objective)});await save(record);return {ok:true,dossier:record};});}
+export async function modifyDossier(id,body={}){if(!validId(id))return {ok:false,error:'Invalid dossier ID'};return serialized(async()=>{const d=await read(id);if(!d)return {ok:false,error:'Dossier not found'};if(!verifyChain(d))return {ok:false,error:'Audit chain integrity failure'};
+ const action=clean(body.action,40);let item;
+ if(action==='hypothesis'){const statement=clean(body.statement,3000),prediction=clean(body.prediction,2000),falsifier=clean(body.falsifier,2000);if(!statement||!prediction||!falsifier)return {ok:false,error:'Hypothesis requires statement, prediction and falsification criterion'};item={id:crypto.randomUUID(),statement,prediction,falsifier,status:'unverified'};d.hypotheses.push(item);}
+ else if(action==='evidence'){const type=clean(body.type,40),description=clean(body.description,3000),source=clean(body.source,1000),sourceDate=clean(body.sourceDate,50);if(!kind.has(type)||!description||!source)return {ok:false,error:'Evidence requires recognized type, description and source'};item={id:crypto.randomUUID(),type,description,source,sourceDate,contentSha256:clean(body.contentSha256,64)||null,verified:false,replicated:false,addedAt:new Date().toISOString()};d.evidence.push(item);}
+ else if(action==='review'){const hypothesisId=clean(body.hypothesisId,36),outcome=clean(body.outcome,30),reason=clean(body.reason,3000),reviewer=clean(body.reviewer,100),basis=Array.isArray(body.evidenceIds)?body.evidenceIds.slice(0,30):[];if(!d.hypotheses.some(h=>h.id===hypothesisId)||!reviews.has(outcome)||!reason||!reviewer||!basis.every(x=>d.evidence.some(e=>e.id===x)))return {ok:false,error:'Review requires existing hypothesis, reviewer, outcome, reason and valid evidence IDs'};item={id:crypto.randomUUID(),hypothesisId,outcome,reason,reviewer,evidenceIds:basis,independent:body.independent===true,at:new Date().toISOString()};d.reviews.push(item);}
+ else if(action==='validate-evidence'){const evidence=d.evidence.find(e=>e.id===body.evidenceId);if(!evidence)return {ok:false,error:'Evidence not found'};if(!clean(body.method,200)||!clean(body.reviewer,100))return {ok:false,error:'Verification method and reviewer required'};evidence.verified=body.verified===true;evidence.replicated=body.replicated===true;evidence.validation={method:clean(body.method,200),reviewer:clean(body.reviewer,100),at:new Date().toISOString()};item={evidenceId:evidence.id,verified:evidence.verified,replicated:evidence.replicated};}
+ else return {ok:false,error:'Unsupported action'};
+ append(d,action,{itemHash:hash(item),itemId:item.id||item.evidenceId});await save(d);return {ok:true,item,assessment:assessDossier(d)};});}
+export async function getDossier(id){if(!validId(id))return {ok:false,error:'Invalid dossier ID'};const d=await read(id);return d?{ok:true,dossier:d,chainValid:verifyChain(d),assessment:assessDossier(d)}:{ok:false,error:'Dossier not found'};}
+export async function listDossiers(){await fs.mkdir(root(),{recursive:true,mode:0o700});const files=(await fs.readdir(root())).filter(n=>validId(n.slice(0,-5))&&n.endsWith('.json')).slice(0,500);const dossiers=[];for(const f of files){const d=await read(f.slice(0,-5));if(d)dossiers.push({id:d.id,title:d.title,createdAt:d.createdAt,evidence:d.evidence.length,chainValid:verifyChain(d)});}return {ok:true,dossiers};}

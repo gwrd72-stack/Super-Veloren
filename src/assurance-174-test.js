@@ -1,0 +1,18 @@
+import assert from 'node:assert/strict';
+import {assessPredictions,readinessGate,evidenceGate,assuranceCategories} from './assurance-174.js';
+let count=0;const test=(name,fn)=>{fn();count++;console.log('PASS',name)};
+test('perfect predictions',()=>{const r=assessPredictions({observed:[1,2,3,4,5],predicted:[1,2,3,4,5]});assert.equal(r.rmse,0);assert.equal(r.r2,1)});
+test('wrong series rejected',()=>assert.equal(assessPredictions({observed:[1,2],predicted:[1,2]}).ok,false));
+test('NaN rejected',()=>assert.equal(assessPredictions({observed:[1,2,3,4,NaN],predicted:[1,2,3,4,5]}).ok,false));
+test('interval coverage',()=>assert.equal(assessPredictions({observed:[1,2,3,4,5],predicted:[1,2,3,4,5],intervals:[[0,2],[1,3],[2,4],[3,5],[0,1]]}).intervalCoverage,.8));
+test('invalid confidence interval rejected',()=>assert.equal(assessPredictions({observed:[1,2,3,4,5],predicted:[1,2,3,4,5],intervals:[[3,1],[1,3],[2,4],[3,5],[4,6]]}).ok,false));
+test('no benchmarks cannot pass',()=>{const r=readinessGate({results:[]});assert.equal(r.readyForNine,false);assert.equal(r.measured,0)});
+test('self assessed benchmark not accepted',()=>{const r=readinessGate({results:[{category:'mathematics',passed:20,total:20,independent:false,runId:'manualrun'}]});assert.equal(r.measured,0)});
+test('too few cases cannot pass',()=>assert.equal(readinessGate({results:[{category:'mathematics',passed:1,total:1,independent:true,runId:'longrunid'}]}).measured,0));
+test('independent benchmark assessed',()=>{const r=readinessGate({results:[{category:'mathematics',passed:19,total:20,independent:true,runId:'longrunid'}]});assert.equal(r.passed,1);assert.equal(r.readyForNine,false)});
+test('all category claims distinguish readiness',()=>{const results=assuranceCategories.map(category=>({category,passed:18,total:20,independent:true,runId:'external-run'}));assert.equal(readinessGate({results}).readyForNine,true)});
+test('negative scores rejected',()=>assert.equal(readinessGate({results:[{category:'mathematics',passed:-1,total:20,independent:true,runId:'longrunid'}]}).measured,0));
+test('evidence incomplete flagged',()=>assert.equal(evidenceGate({records:[{source:'paper1'}]}).qualified,0));
+test('complete evidence fields recognized',()=>assert.equal(evidenceGate({records:[{source:'journal publication',method:'instrument procedure',value:12.3,unit:'Hz',independent:true,control:true}]}).qualified,1));
+test('malformed evidence rejected',()=>assert.equal(evidenceGate({records:[]}).ok,false));
+console.log(`${count} V17.4 assurance checks passed`);

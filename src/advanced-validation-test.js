@@ -1,0 +1,11 @@
+import assert from 'node:assert/strict';
+import {validateHoldout,assessSensitivity,challengeHypotheses} from './advanced-validation.js';
+let n=0;const check=(v)=>{assert(v);n++};
+const rows=Array.from({length:12},(_,i)=>({actual:i*2,partition:i<6?'train':'test'}));
+const models=[{name:'good',predictions:rows.map(r=>r.actual)},{name:'bad',predictions:rows.map(r=>r.actual+5)}];
+let a=validateHoldout({rows,models});check(a.ok);check(a.bestOnHoldout==='good');check(a.models[0].holdout.rmse===0);check(a.models[1].holdout.rmse===5);
+check(!validateHoldout({rows:rows.slice(0,3),models}).ok);check(!validateHoldout({rows,models:[{name:'x',predictions:[1]}]}).ok);check(!validateHoldout({rows:rows.map(r=>({...r,actual:NaN})),models}).ok);
+a=assessSensitivity({baseline:10,variations:[{parameter:'voltage',delta:1,output:14},{parameter:'mass',delta:2,output:12}]});check(a.ok);check(a.ranking[0].parameter==='voltage');check(a.ranking[0].slope===4);check(!assessSensitivity({baseline:10,variations:[{parameter:'x',delta:0,output:1}]}).ok);
+const h=[{id:'conventional'},{id:'novel'}],e=[{source:'lab-1',type:'observation',assessments:{conventional:'supports',novel:'contradicts'}},{source:'lab-2',type:'independent-replication',assessments:{conventional:'supports',novel:'unknown'}}];
+a=challengeHypotheses({hypotheses:h,evidence:e});check(a.ok);check(a.hypotheses[0].status==='corroborated');check(a.hypotheses[1].status==='contested');check(!challengeHypotheses({hypotheses:[{id:'a'},{id:'a'}],evidence:e}).ok);check(!challengeHypotheses({hypotheses:h,evidence:[{...e[0],assessments:{conventional:'certain'}}]}).ok);
+console.log(`PASS V17.2: ${n} assertions`);

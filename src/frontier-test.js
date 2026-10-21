@@ -1,0 +1,13 @@
+import assert from 'node:assert/strict';
+import {compareModels,formulateFrontier,dimensionalAudit} from './frontier.js';
+const rows=Array.from({length:40},(_,i)=>({x:i+1,y:3+2*(i+1)}));
+let r=compareModels({observations:rows});assert.equal(r.ok,true);assert.equal(r.lowestHoldoutError,'linear');assert.ok(r.results.find(x=>x.model==='linear').holdoutRMSE<1e-9);
+assert.equal(compareModels({observations:[{x:1,y:2}]}).ok,false);
+assert.equal(compareModels({observations:Array.from({length:6},()=>({x:1,y:2}))}).ok,true);
+assert.equal(compareModels({observations:[...rows.slice(0,3),{x:NaN,y:2}]}).ok,false);
+r=formulateFrontier({question:'What explains the anomalous signal?',observation:'A second meter repeatedly recorded a peak.'});assert.equal(r.hypotheses.length,3);assert.equal(r.status,'hypotheses-not-confirmed');
+assert.equal(formulateFrontier({question:'?',observation:'none'}).ok,false);
+assert.equal(dimensionalAudit({left:{M:1,L:2,T:-2},right:{M:1,L:2,T:-2}}).consistent,true);
+assert.equal(dimensionalAudit({left:{M:1},right:{T:1}}).consistent,false);
+assert.equal(dimensionalAudit({left:{BAD:1},right:{}}).ok,false);
+console.log('V15 frontier tests: 9 passed');

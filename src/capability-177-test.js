@@ -1,0 +1,14 @@
+import assert from 'node:assert/strict';
+import {signalDiagnostics,oscillatorDiagnostics,evidenceQuality,supervisedResearch,gradeCapabilities} from './capability-177.js';
+let count=0;const check=(test)=>{assert.ok(test);count++};
+const sig=signalDiagnostics({samples:Array.from({length:128},(_,i)=>Math.sin(2*Math.PI*8*i/128)),sampleRate:128});
+check(sig.ok);check(Math.abs(sig.peaks[0].frequency-8)<1e-10);check(Math.abs(sig.peaks[0].amplitude-1)<1e-9);
+check(!signalDiagnostics({samples:[1,2],sampleRate:2}).ok);check(!signalDiagnostics({samples:Array(32).fill(Infinity),sampleRate:10}).ok);
+const o=oscillatorDiagnostics({mass:2,stiffness:8,dt:0.01,steps:600});check(o.ok);check(Math.abs(o.energyDrift)<0.001);check(Math.abs(o.angularFrequency-2)<1e-12);
+check(!oscillatorDiagnostics({mass:1,stiffness:100,dt:0.1}).ok);
+const ev=evidenceQuality({claims:[{claim:'Measured response',sources:['https://example.com/1','https://example.com/2'],measured:true,independentlyReplicated:true},{claim:'Unknown effect'}]});check(ev.ok);check(ev.corroborationReported===1);check(ev.unverified===1);
+const r=await supervisedResearch({objective:'Evaluate measured predictions for an anomalous signal',steps:[{tool:'predictions',args:{observed:[1,2,3,4,5],predicted:[1,2,3,4,5]}}]});check(r.ok);check(r.executed.allPassed);
+const bad=await supervisedResearch({objective:'Evaluate measured predictions for an anomalous signal',steps:[{tool:'shell',args:{cmd:'echo nope'}}]});check(!bad.executed.ok);
+const g=gradeCapabilities({mathematics:{passed:19,total:20,independent:true}});check(!g.allMeetNine);check(g.categories.mathematics.score===9.5);check(g.categories.ai_reasoning.status==='unverified');
+check(!gradeCapabilities({mathematics:{passed:100,total:100,independent:false}}).allMeetNine);
+console.log(`V17.7: ${count} checks passed`);

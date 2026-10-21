@@ -1,0 +1,10 @@
+import assert from 'node:assert/strict';
+import {challenge181,discriminate181,selectTools181,executeTools181,frontierProposal181} from './reasoning-181.js';
+let passed=0;const check=(cond,msg)=>{assert.ok(cond,msg);passed++;};
+const hypotheses=[{claim:'A conventional mechanism',prediction:'Signal rises linearly',falsifier:'Repeatably nonlinear data',observations:['one']},{claim:'A nonlinear mechanism',prediction:'Signal scales quadratically',falsifier:'Robust linear fit',contradictions:['control']}];
+let c=challenge181({objective:'Distinguish models of a measured signal',hypotheses});check(c.ok,'challenge');check(c.rivals.length===2,'rival count');check(c.rivals[0].score>c.rivals[1].score,'ranking');check(!challenge181({objective:'a',hypotheses}).ok,'reject short objective');
+let x=discriminate181({candidates:[{id:'A',predictions:{t1:1,t2:5}},{id:'B',predictions:{t1:1.01,t2:15}}],tests:[{id:'t1',cost:1,uncertainty:1},{id:'t2',cost:2,uncertainty:1}]});check(x.ok,'discrimination');check(x.preferred.testId==='t2','measurement decision');check(!discriminate181({candidates:[{id:'A',predictions:{a:0}},{id:'B',predictions:{a:1}}],tests:[{id:'a',cost:0,uncertainty:1}]}).ok,'reject zero cost');
+let s=selectTools181({observations:{observed:[1,2,3,4,5],predicted:[1,2,3,4,5]}});check(s.ok,'select tool');check(s.suggestions[0].tool==='predictions','selected predictions');let deny=await executeTools181({observations:{observed:[1,2],predicted:[1,2]}});check(!deny.ok&&!!deny.planHash,'approval enforced');let r=await executeTools181({observations:{observed:[1,2,3,4,5],predicted:[1,2,3,4,5]},approved:true,planHash:s.planHash});check(r.ok&&r.failures===0,'execute predictions');check(!awaitInvalid(),'bad inputs handled');
+function awaitInvalid(){return selectTools181({observations:{}}).suggestions.length>0;}
+let model=await frontierProposal181({objective:'Study an unexplained but repeatable experimental result'});check(!model.ok&&!model.autoExecuted,'model key absent or model response controlled');
+console.log(`V18.1 reasoning: ${passed} checks passed`);

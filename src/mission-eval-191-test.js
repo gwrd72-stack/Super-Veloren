@@ -1,0 +1,12 @@
+import assert from 'node:assert/strict';
+import {evaluateFindings,runBenchmark191} from './mission-eval-191.js';
+const doc=(title,reference)=>({title,reference,summary:'independent archive measurements and calibration',origin:'approved test provider'});
+let r=evaluateFindings({objective:'calibration measurements',mustFind:['spectrometer','calibration'],findings:[doc('spectrometer calibration','https://lab.example/a'),doc('spectrometer calibration','https://lab.example/a'),doc('independent spectrometer readings','https://university.example/b'),doc('bad','http://localhost/item')]});
+assert.equal(r.ok,true);assert.equal(r.accepted,2);assert.equal(r.duplicates,1);assert.equal(r.invalid,1);assert.equal(r.distinctHosts,2);assert.equal(r.recall,1);assert.equal(r.hostDiversityMet,true);
+let zero=evaluateFindings({objective:'spectrometer calibration',mustFind:['not-here'],findings:[doc('spectrometer calibration','https://lab.example/a')]});assert.equal(zero.recall,0);assert.equal(zero.hostDiversityMet,false);
+assert.equal(evaluateFindings({objective:'x'}).ok,false);
+const search=async ({objective})=>({ok:true,results:objective.includes('spectrometer')?[doc('spectrometer calibration','https://lab.example/a'),doc('spectrometer calibration measurements','https://university.example/b')]:[],errors:[]});
+let b=await runBenchmark191({cases:[{id:'spectrometer',objective:'Find spectrometer calibration measurements',mustFind:['spectrometer','calibration'],minimumHosts:2}],search});
+assert.equal(b.ok,true);assert.equal(b.total,1);assert.equal(b.passed,1);assert.equal(b.passRate,1);assert.match(b.digest,/^[a-f0-9]{64}$/);
+b=await runBenchmark191({cases:[{id:'failure',objective:'Find spectrometer calibration measurements',mustFind:['impossible'],minimumHosts:2}],search});assert.equal(b.passed,0);assert.equal(b.reports[0].missingExpected[0],'impossible');
+console.log('V19.1 retrieval evaluation: 17 checks passed');

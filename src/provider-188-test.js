@@ -1,0 +1,14 @@
+import assert from 'node:assert/strict';
+import {normalizeProvider188,retrieveProvider188} from './provider-188.js';
+const good={reports:[{title:'Observed exposure indicator',summary:'Published assessment of a public exposure.',category:'exposure',reference:'https://example.org/report/12'},{title:'Observed exposure indicator',summary:'Published assessment of a public exposure.',category:'exposure',reference:'https://example.org/report/12'},{title:'Leaked password list',summary:'password abc',category:'exposure',reference:'https://example.org/dump'},{title:'Hidden service',category:'other',reference:'http://abc.onion/thing'},{title:'Raw material',rawCredentials:true,reference:'https://example.org/3'},{title:'Valid second',category:'research',reference:'https://example.org/other'}]};
+let r=normalizeProvider188(good,{providerId:'provider.test'});assert.equal(r.ok,true);assert.equal(r.accepted.length,2);assert.equal(r.rejected.length,3);assert.equal(r.accepted[0].assessment,'unverified-third-party-report');assert.equal(normalizeProvider188({wrong:[]}).ok,false);
+const env={V188_PROVIDER_URL:'https://provider.example/api/reports',V188_PROVIDER_HOST:'provider.example',V188_PROVIDER_TOKEN:'testing-token'};
+let called=0;const fetcher=async (url,opts)=>{called++;assert.equal(url,env.V188_PROVIDER_URL);assert.equal(opts.headers.Authorization,'Bearer testing-token');assert.equal(opts.redirect,'error');return {ok:true,headers:{get:()=>null},text:async()=>JSON.stringify(good)};};
+r=await retrieveProvider188({limit:10},{env,fetcher});assert.equal(r.ok,true);assert.equal(r.accepted.length,2);assert.equal(called,1);
+assert.equal((await retrieveProvider188({limit:999},{env,fetcher})).ok,false);
+assert.equal((await retrieveProvider188({},{env:{...env,V188_PROVIDER_URL:'http://provider.example/api'},fetcher})).ok,false);
+assert.equal((await retrieveProvider188({},{env:{...env,V188_PROVIDER_HOST:'different.example'},fetcher})).ok,false);
+assert.equal((await retrieveProvider188({},{env:{...env,V188_PROVIDER_URL:'https://127.0.0.1/private',V188_PROVIDER_HOST:'127.0.0.1'},fetcher})).ok,false);
+assert.equal((await retrieveProvider188({},{env:{...env,V188_PROVIDER_TOKEN:''},fetcher})).ok,false);
+assert.equal((await retrieveProvider188({},{env,fetcher:async()=>({ok:true,headers:{get:()=>String(1000000)}})})).ok,false);
+console.log('V18.8 provider connector: 13 checks passed');

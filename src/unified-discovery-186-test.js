@@ -1,0 +1,12 @@
+import assert from 'node:assert/strict';
+import {unifiedDiscovery} from './unified-discovery-186.js';
+let calls=[];
+const search=async input=>{calls.push(input);return {ok:true,results:input.objective.includes('spectrometer')?[{title:'Spectrometer calibration measurements',summary:'Laboratory spectrometer evidence and standards',reference:'https://example.org/one',origin:'archive'},{title:'Spectrometer calibration measurements',summary:'Same reporting',reference:'https://example.org/one',origin:'archive'}]:[{title:'Experimental calibration',summary:'Measurements and calibration methods',reference:'https://example.org/two',origin:'journal'}],errors:[]};};
+let r=await unifiedDiscovery({objective:'Find spectrometer calibration measurements',rounds:2},{search});
+assert.equal(r.ok,true);assert.equal(r.uniqueSources,1);assert.equal(r.findings[0].assessment,'unverified-research-lead');assert.equal(r.rounds.length>=1,true);assert.match(r.digest,/^[a-f0-9]{64}$/);
+assert.equal(r.findings[0].reference,'https://example.org/one');
+let bad=await unifiedDiscovery({objective:'Find spectrometer calibration measurements',providers:['onion']},{search});assert.equal(bad.ok,false);
+bad=await unifiedDiscovery({objective:'Find spectrometer calibration measurements',rounds:7},{search});assert.equal(bad.ok,false);
+const reject=await unifiedDiscovery({objective:'Find spectrometer calibration measurements',rounds:1},{search:async()=>({ok:true,results:[{title:'Internal portal',reference:'http://localhost/private'}]})});assert.equal(reject.uniqueSources,0);
+const denied=await unifiedDiscovery({objective:'x'},{search});assert.equal(denied.ok,false);
+console.log('V18.6 unified discovery tests: 9 checks passed');

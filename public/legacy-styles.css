@@ -1,0 +1,16 @@
+body{margin:0;background:#0c0e12;color:#eef3ff;font-family:Arial,Helvetica,sans-serif}
+header{display:flex;justify-content:space-between;align-items:center;padding:18px 24px;border-bottom:1px solid #263044;background:#121722}
+h1{margin:0;font-size:24px} p{color:#aeb8cc}
+.grid{display:grid;grid-template-columns:2fr 1fr;gap:18px;padding:18px}
+.panel{background:#151b26;border:1px solid #2b354a;border-radius:12px;padding:16px;box-shadow:0 8px 24px #0005}
+.panel.main{min-height:520px}.wide{grid-column:1/3}
+textarea{width:100%;height:130px;background:#080a0f;color:#fff;border:1px solid #3e4a63;border-radius:8px;padding:12px;font-size:16px;box-sizing:border-box}
+button{background:#2f68ff;color:#fff;border:0;border-radius:8px;padding:10px 14px;margin:6px 6px 6px 0;cursor:pointer;font-weight:bold}
+button:hover{background:#5281ff}
+.quick{display:block;width:100%;text-align:left;background:#243047}
+.row{margin-top:10px}.meta{color:#a9d0ff;margin:10px 0;font-size:14px}
+pre{white-space:pre-wrap;background:#07090e;border:1px solid #263044;border-radius:8px;padding:14px;min-height:260px;overflow:auto}
+code{color:#b8ffdf}.law{padding:8px;border-bottom:1px solid #263044}
+
+#researchInput {min-height:100px;}
+#caseTitle,#caseHypothesis, #researchOp {padding:8px;max-width:100%;margin:5px 0;}

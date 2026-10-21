@@ -1,0 +1,80 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Super Vel V10 — X-Files Lab</title>
+  <link rel="stylesheet" href="/legacy-styles.css">
+</head>
+<body>
+  <header>
+    <div>
+      <h1>Super Vel V10 — X-Files Research Lab</h1>
+      <p>Direct Answer Gate + CapBlue-style intent router + MXCL Runtime + Crown Vault</p>
+    </div>
+    <button id="statusBtn">Status</button>
+  </header>
+
+  <main class="grid">
+    <section class="panel main">
+      <h2>Command / Question</h2>
+      <textarea id="message" placeholder="Ask a simple question or give a Master X command..."></textarea>
+      <div class="row">
+        <button id="send">Run Super Vel</button>
+        <button id="crown">Crown this cycle</button>
+        <button id="multiply">Multiply next cycle</button>
+      </div>
+      <div id="meta" class="meta"></div>
+      <pre id="answer">Ready, Master X.</pre>
+    </section>
+
+    <section class="panel">
+      <h2>Quick Tests</h2>
+      <button class="quick">what is 2 plus 2?</button>
+      <button class="quick">who are you?</button>
+      <button class="quick">what is MXCL?</button>
+      <button class="quick">what does Super Vel do?</button>
+      <button class="quick">Master Law: All Super Vel processing is based on MXCL.</button>
+      <button class="quick">Correction: Simple questions must answer directly before MXCL mode.</button>
+      <button class="quick">Super Vel, create the Reality-Tapping Bell Architecture Sheet using MXCL.</button>
+    </section>
+
+    <section class="panel wide">
+      <h2>X-Files Research Laboratory</h2>
+      <p>Describe data, compare samples, fit a model, inspect frequencies, or bootstrap results. Measured data is not automatically evidence of a proposed cause.</p>
+      <select id="researchOp">
+        <option value="describe">Descriptive statistics</option><option value="compare">Compare two groups</option>
+        <option value="fit">Fit linear model</option><option value="spectrum">Frequency spectrum</option>
+        <option value="montecarlo">Bootstrap Monte Carlo</option>
+      </select>
+      <textarea id="researchInput" placeholder='{"values":[1,2,3,4,5]}'>{"values":[1,2,3,4,5]}</textarea>
+      <button id="researchRun">Analyze dataset</button>
+      <pre id="researchResult">Ready for research data.</pre>
+      <h3>Evidence ledger</h3>
+      <input id="caseTitle" placeholder="Case title" />
+      <input id="caseHypothesis" placeholder="Testable hypothesis" />
+      <button id="caseCreate">Create case</button>
+      <pre id="caseResult">No case selected.</pre>
+    </section>
+    <section class="panel wide">
+      <h2>V10 — Physics & Simulation Bench</h2>
+      <p>Run bounded standard-physics simulations. Results are modeled predictions, not measured evidence. Units must be specified.</p>
+      <select id="physicsOp">
+        <option value="oscillator">Mass–spring–damper</option>
+        <option value="rlc">Electrical RLC transient</option>
+        <option value="projectile">Projectile trajectory</option>
+        <option value="inverse_square">Inverse-square scaling</option>
+        <option value="resonance">Driven resonance</option>
+      </select>
+      <textarea id="physicsInput">{"mass_kg":1,"spring_n_per_m":4,"damping_n_s_per_m":0.1,"initial_displacement_m":1,"duration_s":5,"points":101}</textarea>
+      <button id="physicsRun">Run physics simulation</button>
+      <pre id="physicsResult">Ready for model parameters.</pre>
+    </section>
+    <section class="panel wide">
+      <h2>Memory / Vault</h2>
+      <div id="store">Loading...</div>
+    </section>
+  <section style="border:1px solid #888;padding:1rem;margin:1rem 0"><h2>V16.1 Intelligence Workbench</h2><p>Submit a research problem for model-assisted hypothesis exploration (requires locally configured API key). Research proposals are not proven discoveries.</p><textarea id="intelligenceProblem" rows="4" style="width:100%" placeholder="Describe a difficult research or engineering problem"></textarea><button id="intelligenceRun" type="button">Analyze with reasoning model</button><pre id="intelligenceResult" style="white-space:pre-wrap;overflow-wrap:anywhere"></pre></section></main>
+
+  <script src="/legacy-app.js"></script>
+</body>
+</html>
